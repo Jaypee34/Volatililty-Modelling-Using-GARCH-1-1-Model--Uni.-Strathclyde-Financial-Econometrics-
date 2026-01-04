@@ -1,0 +1,315 @@
+---
+title: " Volatility Modelling S&P 500 Index "
+author: "EUGENE OSAE"
+date: "`r Sys.Date()`"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Department Of Mathematics and Statistics
+MM955: Financial Econometrics Project
+Name of Student: Eugene Osae
+
+INTRODUCTION AND BACKGROUND
+
+The Standard and Poor’s 500 (S&P 500) is a stock market index used to track the stock performance of the largest 500 companies listed on the stock market in the U.S. It is one of the popularly followed equity indices and it includes approximately 80% of the total market capitalization of the U.S. public companies made up of an accumulated market capitalization of US$52.2 trillion as of 31st December 2024. The S&P 500 index is a free-float market-value-weighted index made up of 34.6% market capitalization of the nine largest companies, namely Apple, Microsoft, Nvidia, Amazon, Meta, Alphabet, Berkshire Hathaway, Broadcom and Tesla. The components that increased their dividends in 25 consecutive years are called the S&P 500 Dividend Aristocrats. The index is used as a factor for the computation of the Conference Board Leading Economic Index that is used to forecast the direction of the economy. The index is represented on various stock trading platforms with ticker symbols such as ^GSPC, INX and $SPX, depending on the stock market or website. The S&P Dow Jones Indices is responsible for the maintenance of the S&P 500 index, made up of a joint venture majority-owned by S&P Global, and its components are selected by a committee. The S&P 500 index is a very important equity market, and its importance has been recognized in most academic literature since mid-1980, as demonstrated by Professor Andrei Shleifer that stocks tend to jump after being added to the S&P 500. Several other financial articles have explored this issue, for more than thirty years, the so-called “Index Inclusion” effect remains an active area of research in finance. In recent times, another financial paper has demonstrated that the way the S&P 500 index is displayed has systematic effects on financial markets, underscoring the influence of the index. 
+Investors mostly use the index for passive investing, which aims to maximize returns in the large part by minimizing the cost of buying and selling securities. The S&P 500 has dominated the U.S. index fund market, directing over $7 trillion of investors' money in 2022. Investment managers also use the index for mutual fund benchmarking that investors use as a reference point to measure performance. In December 2021, an amount of $15.6 trillion was globally benchmarked to the S&P 500 index. During the end of the sample period, over 40% of all dollars invested in US-focused equity mutual funds used the S&P 500 as their main benchmark, making the Index the most popular benchmarked. Investment professionals also use the index for empirical analysis, to systematically investigate and evaluate data and evidence to draw meaningful conclusions and make informed decisions. The S&P 500 simply captures the performance of one portfolio of large cap domestic equities, which involves the exercise of a substantial amount of discretion by a particular group of financial market professionals and the quantification of the extent of the discretion involved in the construction of the Index and shows that it is substantial. The S&P 500 is used by corporations and financial market participants to assess the performance of individual firms or their managers. This requires public companies to include a performance graph in their annual report that compares their total returns to those of the equity market index, which comprises companies whose equity securities are traded on the same exchange or are of similar market stature, capitalization. 
+Using historical closing prices of the S&P 500 Index, the project aims to transform the data using the log returns to examine the stationarity of the time series data, examine the distribution of returns, estimate the value at risk at different confidence intervals. Choose an appropriate time series model, fit the model and build a model to describe the volatility of log-returns. Financial time series models are implemented to model the volatility of log-returns and check for the adequacy of the model.
+
+```{r}
+# Import the relevant libraries
+library(TSA)
+library(tseries)
+library(tidyquant)
+library(fBasics)
+library(stats)
+library(fUnitRoots)
+library(fGarch)
+
+set.seed(1)
+```
+
+Exploratory Data Analysis
+S&P500 Index Daily stock closing prices Downloaded from Yahoo Finance
+Import dataset from Yahoo Finance 
+
+```{r}
+getSymbols("^GSPC", from = "1993-01-01",to = "1996-12-31", 
+           warnings = FALSE, auto.assign = TRUE)
+prices<- GSPC
+
+```
+
+Time plot of S&P 500 index Daily Closing Prices
+A plot of the daily closing price of the S&P 500 index, the daily stock prices were very low from January 1993 to January 1995. Within this period, the highest price was approximately $475. Prices started increasing from $475 to $660 at the end of January 1995 to December 1995, where it dropped and increased to $750 in January 1996, indicating that the price series are non-stationary.  This is shown in the time plot below. 
+
+```{r}
+par(mfrow = c(1,1))
+plot(prices$GSPC.Adjusted, xlab = "Time", ylab = "Daily Prices", 
+     main = "Daily Stock Prices of S&P 500 Index", col="blue")
+
+```
+
+Daily stock returns of S&P500 Index 1st Jan,1993 to 31st Dec,1996
+```{r}
+r<- diff(log(prices$GSPC.Adjusted))
+r<-na.omit(r)
+```
+
+Check for the Stationarity of the Time series data
+Daily Stock Returns of S&P 500 Index
+
+The time plot shows the daily log-returns against the time index of the S&P 500 Index from January 1993 to January 1996. From the time plot, the log-returns fluctuate around a constant mean of -2% to 2% with relatively constant variation over the time. The log-returns series does not increase or decrease over time and the volatility spread is consistent. This is shown in the plot below. 
+
+```{r}
+plot(r, xlab = "Time", ylab = "Daily Returns", 
+     main = "Daily Stock Returns of S&P 500 Index", col="blue")
+```
+
+Summary Statistics of Returns of S&P 500 index
+
+The descriptive statistics of the daily returns of the S&P 500 Index, the average daily return is 0.0544%, there is a constant variation of 0.0037% from the average returns with a standard deviation of 0.6058%.The log-returns series is negatively skewed at -0.3970 skewness and excess kurtosis of 2.11. 
+```{r}
+basicStats(r)
+
+```
+
+Jarque-Bera Test of Normality
+
+The Jarque-Bera test of normality distributed as a chi-squared random variable with degrees of freedom 2, p-value of 2.2-e16 at 95% confidence level to test for the normality of the log-return series.  
+
+```{r}
+jb_test <- jarque.bera.test(r)
+print(jb_test)
+```
+
+Distribution of Monthly Returns of the S&P 500 Index
+
+The distribution of log-return series is shown in Figure 4.3, the histogram and the normal probability density function are evaluated using the sample and the standard deviation of log-return. The empirical density function has a higher peak around its mean and fatter tails than the normal distribution.  The distribution of the log-return series is shown in Figure below.
+
+```{r}
+par(mfrow= c(1,2))
+hist(r,main = " Histogram of Montly Returns( S&P500 Index)",
+     xlab = "Monthly Returns", col="grey")
+plot(density(r),main = " Density of Montly Returns( S&P500 Index)",
+     xlab = "Monthly Returns",lwd= 1.5, col = "red")
+```
+
+Calculation of Value at Risk for Var @ 99% ,Var @ 97.5% and 
+Var @ 95% confidence levels
+
+The value at risk estimated at 99% confidence level is -1.65%, 90% confidence level is -1.283% and at 95% confidence level is -0.91%. 
+
+```{r}
+quantile(r,probs=c(0.01,0.025,0.05))
+```
+
+FINANCIAL TIME SERIES DATA MODELLING
+
+Fitted Time Series Model 
+Plot of Autocorrelation Function (ACF)& Partial Autocorrelation 
+Function (PACF) of Monthly Returns of S&P 500 Index
+
+The Autocorrelation Function (ACF) and Partial Autocorrelation Function (PACF) are used to determine the order of the Autoregression (AR) and Moving Average models. 
+```{r}
+par(mfrow= c(1,2))
+acf(r, 15, main="ACF of Daily Returns of S&P 500 Index")
+pacf(r,15,main="PACF of Daily Returns of S&P 500 Index" )
+
+```
+
+Since the time series data is  weakly stationary,
+We use an ARMA (p,q) Model 
+Find the order of Autoregressive[AR(p)] Model- we have AR(3)
+
+Further that Akaike Information Criterion (AIC) is used to determine the order of the AR (3) indicating that the AR model is significant at lag 3. From the ACF plot, the MA model is significant at lags 1 and 3. Further, the AICs were used for MA (1) (-7442.31), MA (2) (-7441.60) and MA (3) (-7443.28) indicating that MA (2) is significant with the lowest AIC. The AR (3) model and MA (2) model formed that an Autoregressive Moving Average [ARMA (3,2)] is then fitted and given by the function below.
+ 
+ r_(t )-0.547r_(t-1)+0.309r_(t-2 )-0.103r_(t-3)= 0.0005+a_(t)-0.489a_(t-1)-0.317a_(t-2 ) 
+
+
+```{r}
+ord1<- ar(r, method = "yule-walker")
+
+# AIC for lag 0-15
+ord1$aic
+
+```
+
+This picks the correct order
+```{r}
+ord1$order
+```
+Find the order Moving Average [MA(q)] Model- we have MA(2)
+From the ACF plot, lag 1 and 3 are significant series in the ACF plot 
+with 2 significant spikes
+
+```{r}
+ma1<- arima(r, order = c(0,0,1))
+ma2<- arima(r, order = c(0,0,2))
+ma3<- arima(r, order = c(0,0,3))
+ma1
+ma2
+ma3
+```
+
+MA(2) appears to be the order with least AIC of -7441.6
+Fit the ARMA (3,0,2) Model 
+
+```{r}
+
+fit1<- arima(r, order=c(3,0,2))
+fit1
+```
+MODEL VALIDATION
+
+Diagnostics of of ARIMA (3,0,2) model
+plot of Standardized residuals, ACF, PACF and Q-Q plot 
+
+The ARMA (3,2) model is diagnosed to check the accuracy of the model using the standardised residuals to obtain the ACF, PACF and the Q-Q plots. This is shown in Figure 5.3 above. The Ljung-Box test, with degrees of freedom 10 and a p-value of 0.9984 at lag 10, is conducted to check for autocorrelation of the standard residuals, indicating that the residuals of the ARMA (3,2) model are independent. 
+
+```{r}
+par(mfrow = c(2,2))
+acf(fit1$residuals, main = "ACF Residual")
+pacf(fit1$residuals, main = " PACF of Residuals")
+plot(fit1$residuals, main = " Plot of Standardized Residuals", col = "blue")
+qqnorm(fit1$residuals)
+qqline(fit1$residuals, col=2)
+
+```
+
+Ljung-Box Test to check for autocorrelation of residuals
+
+```{r}
+Box.test(fit1$residuals,lag=10,type="Ljung")
+```
+
+MODELLING VOLATILITY WITH THE GARCH MODEL
+
+Model to Describe the Volatility of Returns 
+In practice lower order GARCH models are used
+Fit an ARMA(3,2)+ GARCH (1,1) Model 
+
+
+The GARCH (1,1) model is fitted to obtain the function for the conditional variance because it shown more significant p-value as compared to the ARMA(3,2)+ GARCH (1,1) Model, these are shown in the tables below.
+From the summary of the GARCH (1,1) model, all the parameters except omega are significant since they are less than the significance level.
+
+GARCH(1,1) Model 
+
+σ_t^2=0.000001128+0.04074a_(t-1)^2 +0.9311a_(t-1)^2
+
+The summary of the GARCH (1,1) model is shown in Figure 5.4 below
+
+
+```{r}
+m1<- garchFit(~arma(3,2)+garch(1,1),data=r,trace=F)
+summary(m1)
+```
+
+Fit GARCH(1,1) model with student t-distribution
+
+```{r}
+m2<- garchFit(~garch(1,1),data=r,trace=F,cond.dist="std")
+summary(m2)
+```
+MODEL VALIDATION
+
+Diagnostics of a GARCH (1,1) model 
+Plot of standardized residuals of GARCH (1,1) Model
+Obtain standardized residuals
+
+The Ljung-Box test of the residuals with degrees of freedom 20 and p-value 0.009452 is conducted to check for autocorrelation of the standard residuals. The GARCH (1,1) is further diagnosed to check the accuracy of the model using the standardised residual plot and q-q plot of the residuals. This is shown in figure below.
+
+```{r}
+res<- residuals(m2, standardize = T)
+plot(res, type= "l",ylab = "Standardized Residual",col = "blue",
+     main = "Plot of Standardized Residual of GARCH(1,1) Model")
+```
+
+Ljung-Box test to check the significance of the model
+
+```{r}
+
+Box.test(res,20,type="Ljung")
+```
+
+QQ Plot of standardized residuals
+
+```{r}
+qqnorm(res)
+qqline(res, col=2)
+```
+
+Ljung-Box test to check the significance of the model
+```{r}
+Box.test(res,20,type="Ljung")
+```
+
+The estimated conditional variances of the daily S&P 500 Index returns 
+
+The conditional variance plot is used to represent the estimated volatility of the GARCH (1,1) model changes over time. The plot showed that the highest volatility is at 0.00008 and the lowest at 0.00002. The average variation occurred at 0.00005, exhibiting periods of higher and lower volatility clustering as shown in the figure below. 
+
+```{r}
+par(mfrow = c(1,1))
+
+plot((fitted(g)[,1])^2,type = "l" ,ylab = "Conditional Variance", xlab= "Time", 
+     col = "red", lwd = 0.3, main="Estimated Volatility of GARCH (1,1) Model")
+
+```
+
+DISCUSSIONS AND CONCLUSION
+
+
+Since the log-return fluctuates around a constant mean and variance over time with a consistent volatility spread, the log-return series is stationary. The average log-return of 0.0544% measures the central location of the distribution. The standard deviation of 0.6058% indicates a constant variability in the log-return. The log-return exhibited a negative skewness of 0.3970, suggesting that the distribution of log-returns is skewed to the left. The excess kurtosis of 2.11 indicates that the distribution is heavy-tailed and that a random sample from this distribution tends to contain more extreme values. According to the Jarque-Bera test for normality, the normality of the log-return series is rejected since the p-value is below the significance level. The histogram and probability density function provide evidence of a lack of normality in the log-return series, rendering the normality assumption questionable. The value at risk for various confidence levels suggests that an investor can be 95% confident that the loss on an investment in the S&P 500 Index will not exceed 1.65%. Furthermore, an investor can be 90% confident that the loss will not surpass 1.283% and can be 95% confident that the loss will not be greater than 0.91% over one day. The ACF and PACF indicated significance at lags 14 and 25. The standard residual plot also demonstrated that there is ARCH effect, and the residuals of the log-return series are stationary, with constant mean and variance and a consistent volatility spread. The q-q plot revealed heavy tails at both the lower and upper limits, indicating that the residuals possess a larger proportion of extreme values at both ends of the distribution compared to a normal distribution. Since the residuals of the ARMA (3,2) model are independent, there is no significant autocorrelation. The Ljung-Box test indicates that there is potential with autocorrelation, so the null hypothesis is rejected. The q-q plot revealed heavy tails at both the lower and upper limits, indicating that the residuals possess a larger proportion of extreme values at both ends of the distribution compared to a normal distribution. The standard residual plot also demonstrated that there is ARCH effect, and the residuals of the log-return series are stationary, with constant mean and variance and a consistent volatility spread.  This indicates that the model should be modified by considering another distribution assumption on innovations, higher models, such as the Integrated GARCH, Exponential GARCH, could be explored to obtain a more accurate model for prediction. 
+
+
+
+
+References
+
+Book by Jianqing Fan and Qiwei Yao, Cambridge University Press, Elements of Financial Econometrics (Asset Returns) Chapter 1, Pages 1-3.
+
+Book by Ruey S. Tsay, University of Chicago Booth School of Business, Analysis of Financial Time Series (Third Edition), Characteristics of Financial Time Series, Chapter 1, pages 1-3.
+
+Book by Ruey S. Tsay, University of Chicago Booth School of Business, Analysis of Financial Time Series (Third Edition), Stationarity, Chapter 2, pages 30-34.
+
+Book by Ruey S. Tsay, University of Chicago Booth School of Business, Analysis of Financial Time Series (Third Edition), Distributional Properties of Returns, Chapter 1, pages 9-10.
+
+University of Strathclyde. (2025). 'Week 2: Week2_lecture2_ slid', Value at Risk, MM955: Financial Econometrics. University of Strathclyde. 20 January. (10 March 2025) by Dr. Jiazhu Pan, pages 1-3
+
+University of Strathclyde. (2025). 'Week 2: Week2_lecture2_ slid', Calculation of Value at Risk, MM955: Financial Econometrics. University of Strathclyde. 20 January. (10 March 2025) by Dr. Jiazhu Pan, pages 1-2
+
+University of Strathclyde. (2025). 'Week 3: Week3_lecture3_ slid', Checking for Stationarity of Time Series, MM955: Financial Econometrics. University of Strathclyde. 20 January. (10 March 2025) by Dr. Jiazhu Pan, pages 1-3
+
+University of Strathclyde. (2025). 'Week 3: Week3_lecture 3 ', tutorial solutions, MM955: Financial Econometrics. University of Strathclyde. 20 January. (10 March 2025) by Dr. Jiazhu Pan, pages 1-4
+
+University of Strathclyde. (2025). 'Week 4: Week4_lecture4_ slid', Moving Average, MM955: Financial Econometrics. University of Strathclyde. 20 January. (10 March 2025) by Dr. Jiazhu Pan, pages 1-11
+
+University of Strathclyde. (2025). 'Week 3: Week3_lecture3_ slid', Forecasting AR (1), MM955: Financial Econometrics. University of Strathclyde. 20 January. (10 March 2025) by Dr. Jiazhu Pan, pages 2-4
+
+University of Strathclyde. (2025). 'Week 1: Week1_lecture1_ slid', Sample Moments and Normality Test, MM955: Financial Econometrics. University of Strathclyde. 20 January. (10 March 2025) by Dr. Jiazhu Pan, pages 1-3
+
+Article by Wikipedia.org, S&P 500 Index, 3 March 2025, paragraph 1-3: S&P 500 - Wikipedia
+
+Article The (Mis)uses of the S&P 500 by Adriana Z. Robertson, University of Chicago Law School (Business law), paragraph 1-9
+
+Article, Investopedia, Passive Investing: Definition, Pros and Cons, vs. Active Investing by James Chan, Michael J. Boyle and Vikki Velasquez, paragraph 1, on 27 January 2025: Passive Investing: Definition, Pros and Cons, vs. Active Investing
+
+Article, Investopedia, Benchmarks: Definition, Types, and How to Use Them in Investing, by James Chan, Jefreda R. Brown, paragraph 1, on 7 April 2025: Benchmarks: Definition, Types, and How to Use Them in Investing
+
+Blog by WallStreatMojo, Empirical Analysis: Empirical Analysis Meaning by Shreeya Jain, Dheeraj Vaidya on 15 Dec 2023: https://www.wallstreetmojo.com/empirical-analysis
+
+Article, Investopedia, What Is a Time Series and How Is It Used to Analyse Data by Adam Hayes, Gordon Scott and Amanda Jackson on 12 June 2022: What Is a Time Series and How Is It Used to Analyze Data?
+
+Article, CFA Institute.org, Time-Series Analysis, Introduction by CFA Institute, CFA® Program Level II, Quantitative Methods, 2025 Curriculum: Time-Series Analysis | CFA Institute
+
+Training program, timescale.com, What Is a Time-Series Plot, and How Can You Create One by Anber Arif on 31 May 2023: timescale.com/blog/what-is-a-time-series-plot-and-how-can-you-create-one
+
+Training program, Atlansian, A complete guide to histograms, what is a histogram by Mike Yi, 2024: 
+Histograms Unveiled: Analysing Numeric Distributions
+
+
+
+
