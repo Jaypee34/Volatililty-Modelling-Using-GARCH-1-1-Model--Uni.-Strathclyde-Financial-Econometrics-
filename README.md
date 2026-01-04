@@ -1,0 +1,2 @@
+# Volatililty-Modelling-Using-GARCH-1-1-Model--Uni.-Strathclyde-Financial-Econometrics-
+This project analyzes S&amp;P 500 daily prices (1993–1996), transforming them into log-returns to examine stationarity, volatility, and distribution. ARMA(3,2) and GARCH(1,1) models capture return dynamics and volatility, while Value at Risk estimates quantify potential losses, supporting risk assessment and portfolio management.
